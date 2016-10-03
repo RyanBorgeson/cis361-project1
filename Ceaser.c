@@ -27,6 +27,8 @@ int main(int argc, char *argv[]) {
 /**
  * Removes any duplicate letters from the key specified by the user.
  * In order to generate a cipher key duplicate letters must be removed.
+ * @param Word The encryption or decryption key passed in as an argument.
+ * @return Returns a new character with duplicate characters removed.
  **/
 char* RemoveDuplicates(char Word[]) {
 	// Dynamically allocate space for the new key character array.
@@ -42,13 +44,13 @@ char* RemoveDuplicates(char Word[]) {
 	// within the new character array. If not, add it to the new key.
 	for (int i = 0; i < (int)strlen(Word); i++) {
 		for (int n = 0; n < NewKeySize; n++) {
-			if (NewKey[n] == Word[i])
+			if (NewKey[n] == toupper(Word[i]))
 				LetterExists = 1;
 		}
 		
 		// If the character does not exist in the new key then add it.
 		if (!LetterExists) {
-			NewKey[NewKeySize] = Word[i];
+			NewKey[NewKeySize] = toupper(Word[i]);
 			NewKeySize++;
 		}
 		LetterExists = 0;
