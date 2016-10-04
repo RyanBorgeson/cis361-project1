@@ -9,54 +9,62 @@
 #include <stdio.h>
 
 
-// Function prototypes.
+/* Function prototypes */
 char* RemoveDuplicates(char Word[]);
 int TargetFound(char charArray[], int num, char target);
-void InitializeEncryptArray(char Key[], char Encrypt[]);
+char* InitializeEncryptArray(char Key[], char Encrypt[]);
 void InitializeDecryptArray(char Encrypt[], char Decrypt[]);
 void ProcessInput(FILE* Inf, FILE* Outf, char Substitute[]);
 
 int main(int argc, char *argv[]) {
-	char *NoDupKey = RemoveDuplicates(argv[2]);
-		
+	// Reverse alpahbet that is used to create the encryption array.
+	char ReverseAlpha[26] = "ZXYWVUTSRQPONMLKJIHGFEDCBA",
+		 ForwardAlpha[26] = "ABCDEFGHIJKLMNOPQRSTUVWYX";
+	
+	// Remove duplicate characters from both the cipher key and
+	// then append cipher key to encryption array.
+	char *CipherKey = RemoveDuplicates(argv[2]),
+		 *EncryptionArray = InitializeEncryptArray(CipherKey, ReverseAlpha);
+	
 
-	printf("%s", NoDupKey);
+	printf("Cipher Key: %s\nEncryption Array: %s\n", CipherKey, EncryptionArray);
 	return 0;
 }
 
 /**
- * Removes any duplicate letters from the key specified by the user.
+ * Removes any duplicate letters from a word.
  * In order to generate a cipher key duplicate letters must be removed.
- * @param Word The encryption or decryption key passed in as an argument.
- * @return Returns a new character with duplicate characters removed.
+ * Also, this is used when creating the encrypted alpahbet pattern.
+ * @param Word The character array to have duplicates removed.
+ * @return Returns a new character array with duplicate characters removed.
  **/
 char* RemoveDuplicates(char Word[]) {
 	// Dynamically allocate space for the new key character array.
 	// This will be returned by the function.
-	char *NewKey = malloc(26);
+	char *NewWord = malloc(strlen(Word) * sizeof(char));
 	
 	int i = 0,									// Word argument iterator index.
 		n = 0,									// New Key iterator index.
 		LetterExists = 0,						// Letter exists in new key flag.
-		NewKeySize = (int)strlen(NewKey);		// Size of New Key character array.
+		NewKeySize = (int)strlen(NewWord);		// Size of New Key character array.
 		
 	// Iterate through each letter in the word to determine if it exists
 	// within the new character array. If not, add it to the new key.
 	for (int i = 0; i < (int)strlen(Word); i++) {
 		for (int n = 0; n < NewKeySize; n++) {
-			if (NewKey[n] == toupper(Word[i]))
+			if (NewWord[n] == toupper(Word[i]))
 				LetterExists = 1;
 		}
 		
 		// If the character does not exist in the new key then add it.
 		if (!LetterExists) {
-			NewKey[NewKeySize] = toupper(Word[i]);
+			NewWord[NewKeySize] = toupper(Word[i]);
 			NewKeySize++;
 		}
 		LetterExists = 0;
 	}
 	
-	return NewKey;
+	return NewWord;
 }
 
 
@@ -72,9 +80,25 @@ int TargetFound(char charArray[], int num, char target) {
 /**
  * Initialize the encrypt array with appropriate cipher letters
  * according to the given key.
+ * @param Key The cipher key with removed duplicate characters.
+ * @param Encrypt The encryption key based on the cipher.
+ * @return Returns the encryption array with removed duplicate characters.
  **/
-void InitializeEncryptArray(char Key[], char Encrypt[]) {
+char* InitializeEncryptArray(char Key[], char Encrypt[]) {
+	// Calculate length of Key and Encrypt for the new combined array.
+	int KeyLength = strlen(Key),
+		EncryptLength = strlen(Encrypt);
+		
+	// Allocate space for the new combined array.
+	char* CombinedArray = malloc((KeyLength + EncryptLength) * sizeof(char));
 
+	// Copy the contents of the Key array and Encrypt array to
+	// memory locations that were allocated for the CombinedArray.
+	memcpy(CombinedArray, Key, KeyLength * sizeof(char));
+	memcpy(CombinedArray + KeyLength, Encrypt, EncryptLength * sizeof(char));
+	
+	// Lastly, remove any duplicate letters.
+	return RemoveDuplicates(CombinedArray);
 }
 
 
