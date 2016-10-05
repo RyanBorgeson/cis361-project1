@@ -1,33 +1,60 @@
 /**
  * Ceaser Cipher - Project 1
- * A ceaser cipher the creates a cipher based on the
+ * A ceaser cipher that creates a cipher based on the
  * provided key. This key can be used to encrypt or decrypt
- * the message.
+ * the message in a file.
  * @Author Ryan Borgeson
+ * @Date 10/5/2016
  **/
 
 #include <stdio.h>
 
+#define ALPHA_SIZE 26
 
 /* Function prototypes */
 char* RemoveDuplicates(char Word[]);
-int TargetFound(char charArray[], int num, char target);
-char* InitializeEncryptArray(char Key[], char Encrypt[]);
+void InitializeEncryptArray(char Key[], char Encrypt[]);
 void InitializeDecryptArray(char Encrypt[], char Decrypt[]);
 void ProcessInput(FILE* Inf, FILE* Outf, char Substitute[]);
 
 int main(int argc, char *argv[]) {
-	// Reverse alpahbet that is used to create the encryption array.
-	char ReverseAlpha[26] = "ZXYWVUTSRQPONMLKJIHGFEDCBA",
-		 ForwardAlpha[26] = "ABCDEFGHIJKLMNOPQRSTUVWYX";
 	
-	// Remove duplicate characters from both the cipher key and
-	// then append cipher key to encryption array.
-	char *CipherKey = RemoveDuplicates(argv[2]),
-		 *EncryptionArray = InitializeEncryptArray(CipherKey, ReverseAlpha);
+	// Determine if enough arguments were passed into the program. 
+	// Display error message if appropriate.
+	if (argc != 5) {
+		printf("Not enough arguments were specified.\n");
+		printf("Encrypt Command Format: Ceaser 0 <CIPHER> <FILE IN> <FILE OUT>\n");
+		printf("Decrypt Command Format: Ceaser 1 <CIPHER> <FILE IN> <FILE OUT>\n");
+		return 0;
+	}
+		 
+	// Declare Encrypt and Decrypt arrays.
+	char Encrypt[ALPHA_SIZE], Decrypt[ALPHA_SIZE];
 	
-
-	printf("Cipher Key: %s\nEncryption Array: %s\n", CipherKey, EncryptionArray);
+	// Remove duplicate characters from the cipher key.
+	char *CipherKey = RemoveDuplicates(argv[2]);
+	
+	// Encrypt or decrypt option.
+	int Choice = atoi(argv[1]);
+	
+	// Initialize both Encrypt and Decrypt arrays with
+	// the proper characters.
+	InitializeEncryptArray(CipherKey, Encrypt);
+	InitializeDecryptArray(Encrypt, Decrypt);
+			 
+	 // Specify the input file and the output file.
+	FILE *FileIn, *FileOut;
+	FileIn = fopen(argv[3], "r");
+	FileOut = fopen(argv[4], "w");
+		  
+	// Determine whether to encrypt or decrypt the file depending on
+	// what the user has specified.
+	if(!Choice) {
+		ProcessInput(FileIn, FileOut, Encrypt);
+	} else {
+		ProcessInput(FileIn, FileOut, Decrypt);
+	}
+    
 	return 0;
 }
 
@@ -69,55 +96,79 @@ char* RemoveDuplicates(char Word[]) {
 
 
 /**
- * Search the first num characters in array charArray for character target
- * return a non-zero integer if found, otherwise, return 0
- **/
-int TargetFound(char charArray[], int num, char target) {
-
-}
-
-
-/**
  * Initialize the encrypt array with appropriate cipher letters
  * according to the given key.
  * @param Key The cipher key with removed duplicate characters.
- * @param Encrypt The encryption key based on the cipher.
- * @return Returns the encryption array with removed duplicate characters.
+ * @param Encrypt The encryption array based on the cipher.
  **/
-char* InitializeEncryptArray(char Key[], char Encrypt[]) {
-	// Calculate length of Key and Encrypt for the new combined array.
-	int KeyLength = strlen(Key),
-		EncryptLength = strlen(Encrypt);
+void InitializeEncryptArray(char Key[], char Encrypt[]) {
+	// Calculate length of Key array.
+	int KeyLength = strlen(Key);
 		
-	// Allocate space for the new combined array.
-	char* CombinedArray = malloc((KeyLength + EncryptLength) * sizeof(char));
+	// Allocate space for a temperary array.
+	char* Temp = malloc((KeyLength + ALPHA_SIZE) * sizeof(char));
 
-	// Copy the contents of the Key array and Encrypt array to
-	// memory locations that were allocated for the CombinedArray.
-	memcpy(CombinedArray, Key, KeyLength * sizeof(char));
-	memcpy(CombinedArray + KeyLength, Encrypt, EncryptLength * sizeof(char));
+	// Copy the contents of the Key array and append the alphabet removing
+	// any character after ALPHA_SIZE.
+	memcpy(Temp, Key, KeyLength);
+	memcpy(Temp + KeyLength, "ZXYWVUTSRQPONMLKJIHGFEDCBA", ALPHA_SIZE * sizeof(char));
 	
-	// Lastly, remove any duplicate letters.
-	return RemoveDuplicates(CombinedArray);
+	// Lastly, remove any duplicate letters and copy to encrypt array.
+	Temp = RemoveDuplicates(Temp);
+	memcpy(Encrypt, Temp, ALPHA_SIZE * sizeof(char));
+	
+	// Free temperary memory.
+	free(Temp);
 }
 
 
 /**
  * Initialize the decrypt array with appropriate substitute letters
  * based on the encrypt array.
+ * @param Encrypt The encryption array.
+ * @param Decrypt Creates the contents of the decrypt array.
  **/
 void InitializeDecryptArray(char Encrypt[], char Decrypt[]) {
-
+	for (int i = 0; i < ALPHA_SIZE; i++) {
+		Decrypt[Encrypt[i] - 'A'] = i + 'A';
+	}
+	Decrypt[ALPHA_SIZE] = '\0';
 }
 
 
 /**
  * Process data from the input file and write the result to the output file
- * pass the encrypt array to parameter substitute if encryption is inteded
- * pass the decrypt array to parameter substitute if decryption is inteded.
+ * pass the encrypt array to parameter substitute if encryption is intended
+ * pass the decrypt array to parameter substitute if decryption is intended.
+ * @param FileIn The file that will be read and encrypted.
+ * @param FileOut File containing the encrypted data.
+ * @param Substitute The encrypt or decrypt array.
  **/
-void ProcessInput(FILE* Inf, FILE* Outf, char Substitute[]) {
+void ProcessInput(FILE* FileIn, FILE* FileOut, char Substitute[]) {
 
+	// Holds the newly read character.
+	int ch;
+
+	// Determine if either file exists. If not, display an error.
+	if (FileIn == NULL || FileOut == NULL) {
+		printf("Unable to open specified file.\n");
+		return NULL;
+	}
+
+	// Loop through entire contents of the file, encrypt the contents, 
+	// and output them to the new file.
+    while ((ch = fgetc(FileIn)) != EOF) {
+		if (!isalpha(ch)) {
+			fprintf(FileOut, "%c", ch);
+		} else {
+			// Account for both upper and lower case in the file.
+			if (islower(ch)) {
+				fprintf(FileOut, "%c", Substitute[ch - 'A' - 32] + 32);
+			} else {
+				fprintf(FileOut, "%c", Substitute[ch - 'A']);
+			}
+		}
+    }
 }
 
 
